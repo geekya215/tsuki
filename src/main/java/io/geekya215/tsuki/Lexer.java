@@ -7,7 +7,17 @@ import java.util.List;
 import java.util.StringTokenizer;
 
 public final class Lexer {
-    public static List<Token> tokenize(String input) {
+    private List<Token> tokens;
+    private Integer cursor;
+    private Integer size;
+
+    public Lexer(String input) {
+        this.tokens = tokenize(input);
+        this.cursor = -1;
+        this.size = tokens.size();
+    }
+
+    private List<Token> tokenize(String input) {
         var text = input
             .replaceAll("\\(", " ( ")
             .replaceAll("\\)", " ) ")
@@ -19,7 +29,7 @@ public final class Lexer {
         while (tokenizer.hasMoreTokens()) {
             var lex = tokenizer.nextToken();
             var token = switch (lex) {
-                case "("  -> new LParen();
+                case "(" -> new LParen();
                 case ")" -> new RParen();
                 case "." -> new Dot();
                 case "\\" -> new Backslash();
@@ -29,5 +39,20 @@ public final class Lexer {
         }
 
         return tokens;
+    }
+
+    public List<Token> getTokens() {
+        return tokens;
+    }
+
+    // Todo
+    // use optional instead of throw exception
+    public Token peek() {
+        return tokens.get(cursor + 1);
+    }
+
+    // same as peek
+    public Token next() {
+        return tokens.get(++cursor);
     }
 }
