@@ -1,4 +1,4 @@
-name: Tsuki Test
+name: Tsuki CI
 
 on:
   push:
@@ -21,4 +21,6 @@ jobs:
           java-version: '17'
           distribution: 'adopt'
       - name: run all testcases
-        run: ./gradlew test
+        run: |
+          chmod +x ./gradlew
+          ./gradlew test
