@@ -9,10 +9,9 @@ import io.geekya215.tsuki.typevar.Unbound;
 import java.util.Map;
 
 public final class Pretty {
-    static Character currentTypevarName = 'a';
 
-    static void nextLetter() {
-        currentTypevarName = (char) (currentTypevarName + 1);
+    static void nextLetter(Ref<Character> characterRef) {
+        characterRef.update((char) (characterRef.unwrap() + 1));
     }
 
     static Boolean shouldParenthesize(Type t) {
@@ -21,18 +20,18 @@ public final class Pretty {
         } else return t instanceof TFun;
     }
 
-    static String prettyType(Map<Integer, String> tbl, Type t) {
+    static String prettyType(Ref<Character> typeVarNameRef, Map<Integer, String> tbl, Type t) {
         return switch (t) {
             case TVar tVar -> switch (tVar.typeVarRef().unwrap()) {
-                case Bound bound -> prettyType(tbl, bound.t());
+                case Bound bound -> prettyType(typeVarNameRef, tbl, bound.t());
                 case Unbound unbound -> {
                     var n = unbound.id();
                     if (tbl.containsKey(n)) {
                         yield tbl.get(n);
                     } else {
-                        var s = currentTypevarName.toString();
+                        var s = typeVarNameRef.unwrap().toString();
                         tbl.put(n, s);
-                        nextLetter();
+                        nextLetter(typeVarNameRef);
                         yield s;
                     }
                 }
@@ -40,8 +39,8 @@ public final class Pretty {
             case TFun tFun -> {
                 var t1 = tFun.t1();
                 var t2 = tFun.t2();
-                var aStr = prettyType(tbl, t1);
-                var bStr = prettyType(tbl, t2);
+                var aStr = prettyType(typeVarNameRef, tbl, t1);
+                var bStr = prettyType(typeVarNameRef, tbl, t2);
                 if (shouldParenthesize(t1)) {
                     yield "(" + aStr + ") -> " + bStr;
                 } else {
