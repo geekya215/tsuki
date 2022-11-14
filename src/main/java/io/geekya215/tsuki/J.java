@@ -14,7 +14,7 @@ import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-public class Infer {
+public class J {
     private static Integer currentLevel = 1;
     private static Integer currentTypevar = 0;
 

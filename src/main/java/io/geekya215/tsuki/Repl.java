@@ -27,7 +27,7 @@ public class Repl {
                 var env = new HashMap<String, Scheme>();
                 var parser = new Parser(input);
                 var expr = parser.parse();
-                var type = Infer.infer(env, expr);
+                var type = J.infer(env, expr);
                 writeLine(Pretty.prettyType(Ref.of('a'), new HashMap<>(), type));
             }
         }
