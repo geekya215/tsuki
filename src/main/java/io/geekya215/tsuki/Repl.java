@@ -1,16 +1,20 @@
 package io.geekya215.tsuki;
 
+import io.geekya215.tsuki.common.Pretty;
+import io.geekya215.tsuki.common.Ref;
+import org.jetbrains.annotations.NotNull;
+
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.util.HashMap;
 
-public class Repl {
-    private final BufferedReader reader;
-    private final BufferedWriter writer;
-    private final String prompt;
+public final class Repl {
+    private final @NotNull BufferedReader reader;
+    private final @NotNull BufferedWriter writer;
+    private final @NotNull String prompt;
 
-    public Repl(BufferedReader reader, BufferedWriter writer, String prompt) {
+    public Repl(@NotNull final BufferedReader reader, @NotNull final BufferedWriter writer, @NotNull final String prompt) {
         this.reader = reader;
         this.writer = writer;
         this.prompt = prompt;
@@ -33,12 +37,12 @@ public class Repl {
         }
     }
 
-    public void write(String text) throws IOException {
+    public void write(@NotNull final String text) throws IOException {
         writer.write(text);
         writer.flush();
     }
 
-    public void writeLine(String text) throws IOException {
+    public void writeLine(@NotNull final String text) throws IOException {
         write(text + "\n");
     }
 }

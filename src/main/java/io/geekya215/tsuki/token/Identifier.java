@@ -1,4 +1,6 @@
 package io.geekya215.tsuki.token;
 
-public record Identifier(String value) implements Token {
+import org.jetbrains.annotations.NotNull;
+
+public record Identifier(@NotNull String value) implements Token {
 }

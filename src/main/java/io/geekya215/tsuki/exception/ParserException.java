@@ -1,7 +1,9 @@
 package io.geekya215.tsuki.exception;
 
-public class ParserException extends Exception {
-    public ParserException(String message) {
+import org.jetbrains.annotations.NotNull;
+
+public final class ParserException extends RuntimeException {
+    public ParserException(@NotNull final String message) {
         super(message);
     }
 }

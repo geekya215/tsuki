@@ -1,4 +1,6 @@
 package io.geekya215.tsuki.expr;
 
-public record EVar(String x) implements Expr {
+import org.jetbrains.annotations.NotNull;
+
+public record EVar(@NotNull String x) implements Expr {
 }

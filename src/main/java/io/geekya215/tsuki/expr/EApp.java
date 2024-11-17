@@ -1,4 +1,6 @@
 package io.geekya215.tsuki.expr;
 
-public record EApp(Expr e1, Expr e2) implements Expr {
+import org.jetbrains.annotations.NotNull;
+
+public record EApp(@NotNull Expr e1, @NotNull Expr e2) implements Expr {
 }

@@ -1,11 +1,13 @@
 package io.geekya215.tsuki;
 
+import io.geekya215.tsuki.common.Ref;
 import io.geekya215.tsuki.expr.*;
 import io.geekya215.tsuki.type.TFun;
 import io.geekya215.tsuki.type.TVar;
 import io.geekya215.tsuki.type.Type;
 import io.geekya215.tsuki.typevar.Bound;
 import io.geekya215.tsuki.typevar.Unbound;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -14,9 +16,9 @@ import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-public class J {
-    private static Integer currentLevel = 1;
-    private static Integer currentTypevar = 0;
+public final class J {
+    private static int currentLevel = 1;
+    private static int currentTypevar = 0;
 
     static void enterLevel() {
         currentLevel++;
@@ -26,15 +28,15 @@ public class J {
         currentLevel--;
     }
 
-    static Integer newVar() {
+    static int newVar() {
         return ++currentTypevar;
     }
 
-    static Type newVarType() {
+    static @NotNull Type newVarType() {
         return new TVar(Ref.of(new Unbound(newVar(), currentLevel)));
     }
 
-    static Type instantiate(Scheme scheme) {
+    static @NotNull Type instantiate(@NotNull final Scheme scheme) {
         var tvars = scheme.tvars();
         var t = scheme.t();
         var subst = tvars.stream()
@@ -42,52 +44,51 @@ public class J {
         return apply(subst, t);
     }
 
-    static Type apply(Map<Integer, Type> subst, Type t) {
+    static @NotNull Type apply(@NotNull final Map<@NotNull Integer, @NotNull Type> subst,
+                               @NotNull final Type t) {
         return switch (t) {
             case TVar tVar -> switch (tVar.typeVarRef().unwrap()) {
-                case Bound bound -> apply(subst, bound.t());
-                case Unbound unbound -> subst.getOrDefault(unbound.id(), tVar);
+                case Bound(Type type) -> apply(subst, type);
+                case Unbound(_, Integer id) -> subst.getOrDefault(id, tVar);
             };
-            case TFun tFun -> new TFun(apply(subst, tFun.t1()), apply(subst, tFun.t2()));
+            case TFun(Type t1, Type t2) -> new TFun(apply(subst, t1), apply(subst, t2));
         };
     }
 
-    static Boolean occurs(Integer id, Integer level, Type t) {
+    static boolean occurs(final int id, final int level, @NotNull final Type t) {
         return switch (t) {
             case TVar tVar -> switch (tVar.typeVarRef().unwrap()) {
-                case Bound bound -> occurs(id, level, bound.t());
-                case Unbound unbound -> {
-                    var _id = unbound.id();
-                    var _level = unbound.level();
+                case Bound(Type type) -> occurs(id, level, type);
+                case Unbound(Integer _id, Integer _level) -> {
                     var minLevel = Math.min(level, _level);
                     tVar.typeVarRef().update(new Unbound(_id, minLevel));
                     yield Objects.equals(id, _id);
                 }
             };
-            case TFun tFun -> occurs(id, level, tFun.t1()) || occurs(id, level, tFun.t2());
+            case TFun(Type t1, Type t2) -> occurs(id, level, t1) || occurs(id, level, t2);
         };
     }
 
-    static void unify(Type t1, Type t2) throws Exception {
-        if (t1 instanceof TVar t && t.typeVarRef().unwrap() instanceof Bound b) {
-            unify(b.t(), t2);
-        } else if (t2 instanceof TVar t && t.typeVarRef().unwrap() instanceof Bound b) {
-            unify(t1, b.t());
-        } else if (t1 instanceof TVar t && t.typeVarRef().unwrap() instanceof Unbound ub) {
+    static void unify(@NotNull final Type t1, @NotNull final Type t2) throws Exception {
+        if (t1 instanceof TVar t && t.typeVarRef().unwrap() instanceof Bound(Type type)) {
+            unify(type, t2);
+        } else if (t2 instanceof TVar t && t.typeVarRef().unwrap() instanceof Bound(Type type)) {
+            unify(t1, type);
+        } else if (t1 instanceof TVar t && t.typeVarRef().unwrap() instanceof Unbound(Integer id, Integer level)) {
             if (Objects.equals(t1, t2)) {
                 // Skip
             } else {
-                if (occurs(ub.id(), ub.level(), t2)) {
+                if (occurs(id, level, t2)) {
                     throw new Exception();
                 } else {
                     t.typeVarRef().update(new Bound(t2));
                 }
             }
-        } else if (t2 instanceof TVar t && t.typeVarRef().unwrap() instanceof Unbound ub) {
+        } else if (t2 instanceof TVar t && t.typeVarRef().unwrap() instanceof Unbound(Integer id, Integer level)) {
             if (Objects.equals(t1, t2)) {
                 // Skip
             } else {
-                if (occurs(ub.id(), ub.level(), t1)) {
+                if (occurs(id, level, t1)) {
                     throw new Exception();
                 } else {
                     t.typeVarRef().update(new Bound(t1));
@@ -101,36 +102,34 @@ public class J {
         }
     }
 
-    static Scheme generalize(Type t) {
-        return new Scheme(
-            ftv(t).stream().distinct().collect(Collectors.toList()),
-            t);
+    static @NotNull Scheme generalize(@NotNull final Type t) {
+        return new Scheme(ftv(t).stream().distinct().collect(Collectors.toList()), t);
     }
 
-    static List<Integer> ftv(Type t) {
+    static @NotNull List<@NotNull Integer> ftv(@NotNull final Type t) {
         return switch (t) {
             case TVar tVar -> switch (tVar.typeVarRef().unwrap()) {
-                case Bound bound -> ftv(bound.t());
-                case Unbound unbound -> {
+                case Bound(Type type) -> ftv(type);
+                case Unbound(Integer id, Integer level) -> {
                     var res = new ArrayList<Integer>();
-                    if (unbound.level() > currentLevel) {
-                        res.add(unbound.id());
+                    if (level > currentLevel) {
+                        res.add(id);
                     }
                     yield res;
                 }
             };
-            case TFun tFun -> {
-                var res = ftv(tFun.t1());
-                res.addAll(ftv(tFun.t2()));
+            case TFun(Type t1, Type t2) -> {
+                var res = ftv(t1);
+                res.addAll(ftv(t2));
                 yield res;
             }
         };
     }
 
-    public static Type infer(Map<String, Scheme> env, Expr expr) throws Exception {
+    public static @NotNull Type infer(@NotNull final Map<@NotNull String, @NotNull Scheme> env,
+                                      @NotNull final Expr expr) throws Exception {
         return switch (expr) {
-            case EVar eVar -> {
-                var x = eVar.x();
+            case EVar(String x) -> {
                 var s = env.get(x);
                 if (Objects.isNull(s)) {
                     throw new Exception();
@@ -138,27 +137,20 @@ public class J {
                     yield instantiate(s);
                 }
             }
-            case EAbs eAbs -> {
-                var x = eAbs.x();
-                var e = eAbs.e();
+            case EAbs(String x, Expr e) -> {
                 var t = newVarType();
                 env.put(x, new Scheme(new ArrayList<>(), t));
                 var _t = infer(env, e);
                 yield new TFun(t, _t);
             }
-            case EApp eApp -> {
-                var e1 = eApp.e1();
-                var e2 = eApp.e2();
+            case EApp(Expr e1, Expr e2) -> {
                 var t0 = infer(env, e1);
                 var t1 = infer(env, e2);
                 var t = newVarType();
                 unify(t0, new TFun(t1, t));
                 yield t;
             }
-            case ELet eLet -> {
-                var x = eLet.x();
-                var e1 = eLet.e1();
-
+            case ELet(String x, Expr e1, _) -> {
                 enterLevel();
                 var t = infer(env, e1);
                 exitLevel();

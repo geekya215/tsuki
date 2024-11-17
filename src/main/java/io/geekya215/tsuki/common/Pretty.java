@@ -1,26 +1,29 @@
-package io.geekya215.tsuki;
+package io.geekya215.tsuki.common;
 
 import io.geekya215.tsuki.type.TFun;
 import io.geekya215.tsuki.type.TVar;
 import io.geekya215.tsuki.type.Type;
 import io.geekya215.tsuki.typevar.Bound;
 import io.geekya215.tsuki.typevar.Unbound;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Map;
 
 public final class Pretty {
 
-    static void nextLetter(Ref<Character> characterRef) {
+    static void nextLetter(@NotNull final Ref<Character> characterRef) {
         characterRef.update((char) (characterRef.unwrap() + 1));
     }
 
-    static Boolean shouldParenthesize(Type t) {
+    static boolean shouldParenthesize(@NotNull final Type t) {
         if (t instanceof TVar _t && _t.typeVarRef().unwrap() instanceof Bound __t) {
             return shouldParenthesize(__t.t());
         } else return t instanceof TFun;
     }
 
-    static String prettyType(Ref<Character> typeVarNameRef, Map<Integer, String> tbl, Type t) {
+    public static @NotNull String prettyType(@NotNull final Ref<Character> typeVarNameRef,
+                                             @NotNull final Map<@NotNull Integer, @NotNull String> tbl,
+                                             @NotNull final Type t) {
         return switch (t) {
             case TVar tVar -> switch (tVar.typeVarRef().unwrap()) {
                 case Bound bound -> prettyType(typeVarNameRef, tbl, bound.t());
